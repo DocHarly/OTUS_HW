@@ -24,8 +24,11 @@ USE WideWorldImporters
 Таблицы: Warehouse.StockItems.
 */
 
-select si.StockItemID, si.StockItemName from Warehouse.StockItems si
-where si.StockItemName like '%urgent%' or si.StockItemName like 'Animal%'
+select si.StockItemID
+	,si.StockItemName
+from Warehouse.StockItems si
+where si.StockItemName like '%urgent%'
+	or si.StockItemName like 'Animal%'
 
 /*
 2. Поставщиков (Suppliers), у которых не было сделано ни одного заказа (PurchaseOrders).
@@ -35,9 +38,10 @@ where si.StockItemName like '%urgent%' or si.StockItemName like 'Animal%'
 По каким колонкам делать JOIN подумайте самостоятельно.
 */
 
-select * from Purchasing.Suppliers s
+select *
+from Purchasing.Suppliers s
 left join Purchasing.PurchaseOrders po on s.SupplierID = po.SupplierID
-where po.PurchaseOrderID is NULL
+where po.PurchaseOrderID is null
 
 /*
 3. Заказы (Orders) с ценой товара (UnitPrice) более 100$ 
@@ -58,18 +62,25 @@ where po.PurchaseOrderID is NULL
 Таблицы: Sales.Orders, Sales.OrderLines, Sales.Customers.
 */
 
-select	o.OrderID, 
-		format(o.OrderDate, 'dd.MM.yyyy') OrderDate, 
-		datename(month, o.OrderDate) 'Month', 
-		datename(quarter, o.OrderDate) 'Quarter', 
-		round(datepart(month, o.OrderDate)/4, 0) + 1 'Season', 
-		c.CustomerName 
+select o.OrderID
+	,format(o.OrderDate, 'dd.MM.yyyy') OrderDate
+	,datename(month, o.OrderDate) 'Month'
+	,datename(quarter, o.OrderDate) 'Quarter'
+	,round(datepart(month, o.OrderDate) / 4, 0) + 1 'Season'
+	,c.CustomerName
 from Sales.Orders o
 inner join Sales.OrderLines ol on o.OrderID = ol.OrderID
 inner join Sales.Customers c on o.CustomerID = c.CustomerID
-where (ol.UnitPrice > 100 or ol.Quantity > 20) and ol.PickingCompletedWhen is not null
-order by datename(quarter, o.OrderDate), round(datepart(month, o.OrderDate)/4, 0) + 1, format(o.OrderDate, 'dd.MM.yyyy')
-offset 1000 rows fetch first 100 rows only
+where (
+		ol.UnitPrice > 100
+		or ol.Quantity > 20
+		)
+	and ol.PickingCompletedWhen is not null
+order by datename(quarter, o.OrderDate)
+	,round(datepart(month, o.OrderDate) / 4, 0) + 1
+	,format(o.OrderDate, 'dd.MM.yyyy') offset 1000 rows
+
+fetch first 100 rows only
 
 /*
 4. Заказы поставщикам (Purchasing.Suppliers),
@@ -85,11 +96,21 @@ offset 1000 rows fetch first 100 rows only
 Таблицы: Purchasing.Suppliers, Purchasing.PurchaseOrders, Application.DeliveryMethods, Application.People.
 */
 
-select dm.DeliveryMethodName, po.ExpectedDeliveryDate, s.SupplierName, p.FullName 'ContactPerson' from Purchasing.Suppliers s
+select dm.DeliveryMethodName
+	,po.ExpectedDeliveryDate
+	,s.SupplierName
+	,p.FullName 'ContactPerson'
+from Purchasing.Suppliers s
 inner join Purchasing.PurchaseOrders po on po.SupplierID = s.SupplierID
 inner join Application.DeliveryMethods dm on dm.DeliveryMethodID = po.DeliveryMethodID
 inner join Application.People p on p.PersonID = po.ContactPersonID
-where po.ExpectedDeliveryDate between '20130101' and '20130131' and dm.DeliveryMethodName in ('Air Freight', 'Refrigerated Air Freight') and po.IsOrderFinalized = 1
+where po.ExpectedDeliveryDate between '20130101'
+		and '20130131'
+	and dm.DeliveryMethodName in (
+		'Air Freight'
+		,'Refrigerated Air Freight'
+		)
+	and po.IsOrderFinalized = 1
 order by po.ExpectedDeliveryDate
 
 /*
@@ -98,9 +119,12 @@ order by po.ExpectedDeliveryDate
 Сделать без подзапросов.
 */
 
-select top 10 p.FullName 'CustomerName', p2.FullName 'SalesPerson', o.* from Sales.Orders o
-inner join Application.People p on p.PersonID = o.CustomerID
-inner join Application.People p2 on p2.PersonID = o.SalespersonPersonID
+select top 10 c.CustomerName 'CustomerName'
+	,p.FullName 'SalesPerson'
+	,o.*
+from Sales.Orders o
+inner join Sales.Customers c on c.CustomerID = o.CustomerID
+inner join Application.People p on p.PersonID = o.SalespersonPersonID
 order by o.OrderDate desc
 
 /*
@@ -109,14 +133,19 @@ order by o.OrderDate desc
 Имя товара смотреть в таблице Warehouse.StockItems.
 */
 
-select p.PersonID, p.FullName, p.PhoneNumber from Sales.Orders o
+select p.PersonID
+	,p.FullName
+	,p.PhoneNumber
+from Sales.Orders o
 inner join Sales.OrderLines ol on o.OrderID = ol.OrderID
 inner join Application.People p on o.CustomerID = p.PersonID
-where ol.StockItemID = 224 
+where ol.StockItemID = 224
 
-
-select p.PersonID, p.FullName, p.PhoneNumber from Sales.Orders o
+select p.PersonID
+	,p.FullName
+	,p.PhoneNumber
+from Sales.Orders o
 inner join Sales.OrderLines ol on o.OrderID = ol.OrderID
 inner join Application.People p on o.CustomerID = p.PersonID
-inner join Warehouse.StockItems si on ol.StockItemID = si.StockItemID 
-									and si.StockItemName = 'Chocolate frogs 250g'
+inner join Warehouse.StockItems si on ol.StockItemID = si.StockItemID
+	and si.StockItemName = 'Chocolate frogs 250g'
